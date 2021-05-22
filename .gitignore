@@ -1,4 +1,6 @@
 /.idea/
+/logs/
 /target/
 
+media-server-1.log4rs.yaml
 media-server-1.toml
