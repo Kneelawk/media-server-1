@@ -7,7 +7,7 @@ use std::{
     io::Read,
 };
 
-const CONFIG_FILE_NAME: &str = "media-server-config.toml";
+const CONFIG_FILE_NAME: &str = "media-server-1.toml";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct ConfigRaw {
