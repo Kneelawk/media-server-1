@@ -1,0 +1,12 @@
+[general]
+base-dir = "/aux/jedidiah/Videos/"
+exclude-patterns = [
+    '.*\.jar$',
+    '.*\.json$',
+    '.*\.toml$',
+    '^anime-file$',
+]
+bindings = [
+    '127.0.0.1:9090',
+    '192.168.1.15:9090',
+]
