@@ -89,7 +89,7 @@ where
 
         let path_str = real_path.to_string_lossy();
 
-        if !self.config.exclude_patterns.is_match(&path_str) {
+        if self.config.is_legal_path(&path_str) {
             Either::Right(Box::pin(self.service.call(req)))
         } else {
             Either::Left(ok(
