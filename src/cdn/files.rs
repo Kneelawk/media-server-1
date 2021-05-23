@@ -2,18 +2,36 @@ use crate::{
     config::Config,
     error::{Error, ErrorKind, Result},
 };
-use actix_files::Files;
+use actix_files::{Directory, Files};
 use actix_service::ServiceFactory;
 use actix_web::{
     dev::{Service, ServiceRequest, ServiceResponse, Transform},
-    web, Scope,
+    web, HttpRequest, HttpResponse, Scope,
 };
 use futures::{
     future,
     future::{ok, Either, Ready},
     task::{Context, Poll},
 };
-use std::{future::Future, path::PathBuf, pin::Pin, result};
+use path_slash::PathExt;
+use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
+use std::{
+    fmt::Write,
+    future::Future,
+    io,
+    path::{Path, PathBuf},
+    pin::Pin,
+    result,
+};
+
+lazy_static! {
+    static ref PATH_SET: AsciiSet = NON_ALPHANUMERIC
+        .remove(b'/')
+        .remove(b'-')
+        .remove(b'_')
+        .remove(b'.')
+        .remove(b'+');
+}
 
 pub fn service(
     config: &Config,
@@ -26,11 +44,17 @@ pub fn service(
         InitError = (),
     >,
 > {
+    let config_copy = config.clone();
+
     web::scope("/files")
         .wrap(FilesLimiter {
             config: config.clone(),
         })
-        .service(Files::new("", &config.base_dir).show_files_listing())
+        .service(
+            Files::new("", &config.base_dir)
+                .show_files_listing()
+                .files_listing_renderer(move |dir, req| directory_listing(&config_copy, dir, req)),
+        )
 }
 
 struct FilesLimiter {
@@ -89,14 +113,94 @@ where
 
         let path_str = real_path.to_string_lossy();
 
-        if !self.config.exclude_patterns.is_match(&path_str) {
+        trace!("Limiter: Path: {}", &path_str);
+
+        if self.config.is_legal_path(&path_str) {
+            trace!("Limiter: Accepted");
             Either::Right(Box::pin(self.service.call(req)))
         } else {
+            trace!("Limiter: Rejected");
             Either::Left(ok(
                 req.error_response(Error::from_kind(ErrorKind::FilesLimiterError))
             ))
         }
     }
+}
+
+/*
+ * Copied from actix-files-0.5.0/src/directory.rs
+ */
+
+fn directory_listing(
+    config: &Config,
+    dir: &Directory,
+    req: &HttpRequest,
+) -> io::Result<ServiceResponse> {
+    let path = percent_decode_str(req.path())
+        .decode_utf8_lossy()
+        .into_owned();
+    let index_of = format!("Index of {}", &path);
+    let mut body = String::new();
+    let base = Path::new(&path);
+
+    for entry in dir.path.read_dir()? {
+        if dir.is_visible(&entry) {
+            let entry = entry.unwrap();
+            let entry_path = entry.path();
+            let stripped = match entry_path.strip_prefix(&dir.path) {
+                Ok(p) => p,
+                Err(_) => continue,
+            };
+
+            let path_str = stripped.to_string_lossy();
+            trace!("Listing: Path: {}", &path_str);
+
+            if config.is_legal_path(&path_str) {
+                trace!("Listing: Accepted");
+                let href = base.join(&stripped).to_slash_lossy();
+
+                // if file is a directory, add '/' to the end of the name
+                if let Ok(metadata) = entry.metadata() {
+                    if metadata.is_dir() {
+                        let _ = write!(
+                            body,
+                            "<li><a href=\"{}\">{}/</a></li>",
+                            utf8_percent_encode(&href, &PATH_SET),
+                            v_htmlescape::escape(&entry.file_name().to_string_lossy()),
+                        );
+                    } else {
+                        let _ = write!(
+                            body,
+                            "<li><a href=\"{}\">{}</a></li>",
+                            utf8_percent_encode(&href, &PATH_SET),
+                            v_htmlescape::escape(&entry.file_name().to_string_lossy()),
+                        );
+                    }
+                } else {
+                    continue;
+                }
+            } else {
+                trace!("Listing: Rejected");
+                continue;
+            }
+        }
+    }
+
+    let html = format!(
+        "<html>\
+         <head><title>{}</title></head>\
+         <body><h1>{}</h1>\
+         <ul>\
+         {}\
+         </ul></body>\n</html>",
+        index_of, index_of, body
+    );
+    Ok(ServiceResponse::new(
+        req.clone(),
+        HttpResponse::Ok()
+            .content_type("text/html; charset=utf-8")
+            .body(html),
+    ))
 }
 
 /*
