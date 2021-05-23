@@ -5,6 +5,7 @@ extern crate log;
 #[macro_use]
 extern crate serde;
 
+mod cdn;
 mod config;
 mod error;
 mod logging;
@@ -14,8 +15,7 @@ use crate::{
     config::Config,
     error::{Result, ResultExt},
 };
-use actix_files::Files;
-use actix_web::{App, HttpServer};
+use actix_web::{middleware::DefaultHeaders, App, HttpServer};
 use std::process::exit;
 
 async fn run() -> Result<()> {
@@ -23,12 +23,23 @@ async fn run() -> Result<()> {
 
     util::ffmpeg::init_ffmpeg()?;
 
-    let base_dir = config.base_dir.clone();
-
+    let server_config = config.clone();
     let mut server = HttpServer::new(move || {
-        let base_dir = base_dir.clone();
+        let config = server_config.clone();
 
-        App::new().service(Files::new("/files", base_dir).show_files_listing())
+        #[allow(unused_mut)]
+        let mut app = App::new();
+
+        // allows CORS from development server to api server
+        #[cfg(debug_assertions)]
+        let mut app = app.wrap(
+            DefaultHeaders::new().header("Access-Control-Allow-Origin", "http://localhost:4200"),
+        );
+
+        // app = app.service(Files::new("/files", base_dir).show_files_listing());
+        app = app.service(cdn::services(&config));
+
+        app
     });
 
     for binding in config.bindings.iter() {

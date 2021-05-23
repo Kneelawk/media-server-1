@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 const CONFIG_FILE_NAME: &str = "media-server-1.toml";
@@ -27,7 +27,7 @@ struct ConfigGeneral {
 
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub base_dir: String,
+    pub base_dir: PathBuf,
     pub exclude_patterns: RegexSet,
     pub bindings: Vec<String>,
 }
@@ -75,7 +75,7 @@ impl Config {
             .chain_err(|| ConfigLoadError("Error re-writing config file".into()))?;
 
         Ok(Config {
-            base_dir: cfg_raw.general.base_dir,
+            base_dir: cfg_raw.general.base_dir.into(),
             exclude_patterns: RegexSet::new(cfg_raw.general.exclude_patterns)
                 .chain_err(|| ConfigLoadError("Error parsing regex".into()))?,
             bindings: cfg_raw.general.bindings,
