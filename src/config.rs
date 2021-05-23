@@ -19,7 +19,7 @@ struct ConfigRaw {
 struct ConfigGeneral {
     #[serde(rename = "base-dir", default = "default_base_dir")]
     base_dir: String,
-    #[serde(rename = "exclude-patterns", default)]
+    #[serde(rename = "exclude-patterns", default = "default_exclude_patterns")]
     exclude_patterns: Vec<String>,
     #[serde(default = "default_bindings")]
     bindings: Vec<String>,
@@ -36,7 +36,7 @@ impl Default for ConfigGeneral {
     fn default() -> Self {
         ConfigGeneral {
             base_dir: default_base_dir(),
-            exclude_patterns: Default::default(),
+            exclude_patterns: default_exclude_patterns(),
             bindings: default_bindings(),
         }
     }
@@ -97,6 +97,18 @@ fn default_base_dir() -> String {
     }
 }
 
+fn default_exclude_patterns() -> Vec<String> {
+    vec![
+        "^.env".to_owned(),
+        "^logs".to_owned(),
+        "^media-server-1$".to_owned(),
+        "\\.jar$".to_owned(),
+        "\\.json$".to_owned(),
+        "\\.toml$".to_owned(),
+        "\\.ya?ml$".to_owned(),
+    ]
+}
+
 fn default_bindings() -> Vec<String> {
-    return vec!["127.0.0.1:9090".to_string()];
+    vec!["127.0.0.1:9090".to_owned()]
 }
