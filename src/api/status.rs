@@ -9,6 +9,8 @@ pub async fn get_status(config: web::Data<Config>) -> HttpResponse {
     json_ok(ServerStatus {
         name: NAME,
         version: VERSION,
+        welcome_title: config.welcome_title.clone(),
+        welcome_content: config.welcome_content.clone(),
     })
 }
 
@@ -16,4 +18,6 @@ pub async fn get_status(config: web::Data<Config>) -> HttpResponse {
 struct ServerStatus {
     name: &'static str,
     version: &'static str,
+    welcome_title: String,
+    welcome_content: String,
 }

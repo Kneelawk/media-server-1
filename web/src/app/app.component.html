@@ -2,13 +2,7 @@
   <!--  <div th:insert="~{menu-bar :: menubar}"></div>-->
   <app-menu-bar></app-menu-bar>
   <div>
-    <h1 id="title">Welcome to my anime server</h1>
-    <p>
-      This is a simple Spring web server I built to host all the anime on my anime drive. Not everything is
-      implemented yet, but you can browse my collection in the <a href="/tree/">Browse</a> section.
-    </p>
-    <p>
-      My anime collection is still relatively small, but I still hope you enjoy it :)
-    </p>
+    <h1 id="title">{{title$ | async}}</h1>
+    <div [innerHTML]="content$ | async"></div>
   </div>
 </div>

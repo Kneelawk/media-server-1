@@ -23,6 +23,10 @@ struct ConfigGeneral {
     exclude_patterns: Vec<String>,
     #[serde(default = "default_bindings")]
     bindings: Vec<String>,
+    #[serde(rename = "welcome-title", default = "default_welcome_title")]
+    welcome_title: String,
+    #[serde(rename = "welcome-content", default = "default_welcome_content")]
+    welcome_content: String,
 }
 
 #[derive(Debug, Clone)]
@@ -30,6 +34,8 @@ pub struct Config {
     pub base_dir: PathBuf,
     pub exclude_patterns: RegexSet,
     pub bindings: Vec<String>,
+    pub welcome_title: String,
+    pub welcome_content: String,
 }
 
 impl Default for ConfigGeneral {
@@ -38,6 +44,8 @@ impl Default for ConfigGeneral {
             base_dir: default_base_dir(),
             exclude_patterns: default_exclude_patterns(),
             bindings: default_bindings(),
+            welcome_title: default_welcome_title(),
+            welcome_content: default_welcome_content(),
         }
     }
 }
@@ -79,6 +87,8 @@ impl Config {
             exclude_patterns: RegexSet::new(cfg_raw.general.exclude_patterns)
                 .chain_err(|| ConfigLoadError("Error parsing regex".into()))?,
             bindings: cfg_raw.general.bindings,
+            welcome_title: cfg_raw.general.welcome_title,
+            welcome_content: cfg_raw.general.welcome_content,
         })
     }
 
@@ -115,4 +125,20 @@ fn default_exclude_patterns() -> Vec<String> {
 
 fn default_bindings() -> Vec<String> {
     vec!["127.0.0.1:9090".to_owned()]
+}
+
+fn default_welcome_title() -> String {
+    "Media Server 1".to_string()
+}
+
+fn default_welcome_content() -> String {
+    r#"<p>
+Welcome! This media server seems to be working correctly.
+</p>
+<p>
+This is a sample welcome text. To configure your own, open the <code>media-server-1.toml</code>
+file next to your media-server-1 application and edit the <code>welcome-title</code> and
+<code>welcome-content</code> properties.
+"#
+        .to_string()
 }

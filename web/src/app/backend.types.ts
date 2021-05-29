@@ -7,4 +7,6 @@ export interface ResponseResult<T> {
 export interface Status {
   name: string,
   version: string,
+  welcome_title: string,
+  welcome_content: string,
 }
