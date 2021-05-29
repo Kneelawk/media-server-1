@@ -1,10 +1,13 @@
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate serde;
 
+mod api;
 mod cdn;
 mod config;
 mod error;
@@ -38,6 +41,7 @@ async fn run() -> Result<()> {
 
         // app = app.service(Files::new("/files", base_dir).show_files_listing());
         app = app.service(cdn::services(&config));
+        app = app.service(api::service(&config));
 
         app
     });

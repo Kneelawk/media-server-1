@@ -1,4 +1,6 @@
 pub mod ffmpeg;
+pub mod path;
+pub mod web;
 
 // Result wrapper functions
 

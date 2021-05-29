@@ -1,6 +1,7 @@
 use crate::{
     config::Config,
-    error::{Error, ErrorKind, Result},
+    error::{Error, ErrorKind},
+    util::path::parse_path,
 };
 use actix_files::Files;
 use actix_service::ServiceFactory;
@@ -13,7 +14,7 @@ use futures::{
     future::{ok, Either, Ready},
     task::{Context, Poll},
 };
-use std::{future::Future, path::PathBuf, pin::Pin, result};
+use std::{future::Future, pin::Pin, result};
 
 pub fn service(
     config: &Config,
@@ -30,7 +31,7 @@ pub fn service(
         .wrap(FilesLimiter {
             config: config.clone(),
         })
-        .service(Files::new("", &config.base_dir).show_files_listing())
+        .service(Files::new("", &config.base_dir))
 }
 
 struct FilesLimiter {
@@ -89,7 +90,7 @@ where
 
         let path_str = real_path.to_string_lossy();
 
-        if !self.config.exclude_patterns.is_match(&path_str) {
+        if self.config.is_legal_path(&path_str) {
             Either::Right(Box::pin(self.service.call(req)))
         } else {
             Either::Left(ok(
@@ -97,37 +98,4 @@ where
             ))
         }
     }
-}
-
-/*
- * Copied from actix-files-0.5.0/src/error.rs to make sure responses stay the
- * same for limited files.
- */
-
-fn parse_path(path: &str, hidden_files: bool) -> Result<PathBuf> {
-    let mut buf = PathBuf::new();
-
-    for segment in path.split('/') {
-        if segment == ".." {
-            buf.pop();
-        } else if !hidden_files && segment.starts_with('.') {
-            bail!(ErrorKind::UriSegmentError)
-        } else if segment.starts_with('*') {
-            bail!(ErrorKind::UriSegmentError)
-        } else if segment.ends_with(':') {
-            bail!(ErrorKind::UriSegmentError)
-        } else if segment.ends_with('>') {
-            bail!(ErrorKind::UriSegmentError)
-        } else if segment.ends_with('<') {
-            bail!(ErrorKind::UriSegmentError)
-        } else if segment.is_empty() {
-            continue;
-        } else if cfg!(windows) && segment.contains('\\') {
-            bail!(ErrorKind::UriSegmentError)
-        } else {
-            buf.push(segment)
-        }
-    }
-
-    Ok(buf)
 }

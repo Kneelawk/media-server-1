@@ -81,6 +81,10 @@ impl Config {
             bindings: cfg_raw.general.bindings,
         })
     }
+
+    pub fn is_legal_path(&self, path: &str) -> bool {
+        !self.exclude_patterns.is_match(path)
+    }
 }
 
 fn default_base_dir() -> String {
