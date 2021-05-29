@@ -1,4 +1,6 @@
 #[macro_use]
+extern crate actix_web;
+#[macro_use]
 extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
@@ -18,7 +20,7 @@ use crate::{
     config::Config,
     error::{Result, ResultExt},
 };
-use actix_web::{middleware::DefaultHeaders, App, HttpServer};
+use actix_web::{middleware::DefaultHeaders, web::Data, App, HttpServer};
 use std::process::exit;
 
 async fn run() -> Result<()> {
@@ -27,11 +29,13 @@ async fn run() -> Result<()> {
     util::ffmpeg::init_ffmpeg()?;
 
     let server_config = config.clone();
+    let server_config_data = Data::new(config.clone());
     let mut server = HttpServer::new(move || {
         let config = server_config.clone();
+        let config_data = server_config_data.clone();
 
         #[allow(unused_mut)]
-        let mut app = App::new();
+        let mut app = App::new().app_data(config_data);
 
         // allows CORS from development server to api server
         #[cfg(debug_assertions)]
