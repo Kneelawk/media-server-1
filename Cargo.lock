@@ -284,6 +284,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-static-files"
+version = "3.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b5bced189d398750426bd73719acfa63e2b3707e3804891e82e9cfa189ce9c8"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "derive_more",
+ "futures",
+ "mime_guess",
+ "path-slash",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1222,6 +1236,7 @@ dependencies = [
  "actix-files",
  "actix-service",
  "actix-web",
+ "actix-web-static-files",
  "anyhow",
  "chrono",
  "derive_more",
