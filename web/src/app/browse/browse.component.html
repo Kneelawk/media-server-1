@@ -1,1 +1,11 @@
-<h1 id="title">browse works!</h1>
+<div>
+  <h1 id="title">{{name}}</h1>
+  Path:
+  <pre>{{path}}</pre>
+  <h4>Files:</h4>
+  <ul class="directory">
+    <li *ngFor="let child of children">
+      <a>{{child.name}}</a>
+    </li>
+  </ul>
+</div>

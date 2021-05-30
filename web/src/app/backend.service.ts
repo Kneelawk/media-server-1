@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { ResponseResult, Status } from "./backend.types";
+import { EntryInfo, ResponseResult, Status } from "./backend.types";
 import { environment } from "../environments/environment";
 import { Observable } from "rxjs";
 import { share } from "rxjs/operators";
@@ -10,9 +10,10 @@ import { share } from "rxjs/operators";
 })
 export class BackendService {
 
-  private baseUrl = environment.serve ? 'http://localhost:9090' : '';
-  private apiUrl = `${ this.baseUrl }/api/v1`
-  private statusUrl = `${ this.apiUrl }/status`
+  private static baseUrl = environment.serve ? 'http://localhost:9090' : '';
+  private static apiUrl = `${ BackendService.baseUrl }/api/v1`
+  private static statusUrl = `${ BackendService.apiUrl }/status`
+  private static indexFilesUrl = `${ BackendService.apiUrl }/index/files`
 
   status$: Observable<ResponseResult<Status>> = this.getStatus().pipe(share());
 
@@ -28,7 +29,11 @@ export class BackendService {
     })
   }
 
+  getIndexFile(path: string): Observable<ResponseResult<EntryInfo>> {
+    return this.client.get<ResponseResult<EntryInfo>>(`${ BackendService.indexFilesUrl }${ path }`)
+  }
+
   private getStatus(): Observable<ResponseResult<Status>> {
-    return this.client.get<ResponseResult<Status>>(this.statusUrl);
+    return this.client.get<ResponseResult<Status>>(BackendService.statusUrl);
   }
 }

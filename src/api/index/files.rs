@@ -324,7 +324,6 @@ struct JsonEntryInfo {
 }
 
 #[derive(Debug, Serialize)]
-#[serde(tag = "type")]
 enum JsonEntryDetail {
     Directory { children: Vec<JsonDirectoryChild> },
     Error { error: JsonIndexError },
