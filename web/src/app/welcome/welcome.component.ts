@@ -21,10 +21,12 @@ export class WelcomeComponent implements OnInit {
   content$: Observable<string> = this.status$.pipe(
     map(status => status?.welcome_content ?? 'Error loading content')
   );
+  content: string = 'Loading content...'
 
   constructor(private backend: BackendService, private title: Title) {}
 
   ngOnInit(): void {
-    this.title$.subscribe(str => this.title.setTitle(str))
+    this.title$.subscribe(str => this.title.setTitle(str));
+    this.content$.subscribe(str => this.content = str);
   }
 }

@@ -132,13 +132,11 @@ fn default_welcome_title() -> String {
 }
 
 fn default_welcome_content() -> String {
-    r#"<p>
-Welcome! This media server seems to be working correctly.
-</p>
-<p>
-This is a sample welcome text. To configure your own, open the <code>media-server-1.toml</code>
-file next to your media-server-1 application and edit the <code>welcome-title</code> and
-<code>welcome-content</code> properties.
+    r#"Welcome! This media server seems to be working correctly.
+
+This is a sample welcome text. To configure your own, open the `media-server-1.toml`
+file next to your media-server-1 application and edit the `welcome-title` and
+`welcome-content` properties.
 "#
         .to_string()
 }
