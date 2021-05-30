@@ -4,6 +4,7 @@ import { DirectoryChild, EntryInfo } from "../backend.types";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Location } from "@angular/common";
 import { BROWSE_PATH } from "../paths";
+import { Title } from "@angular/platform-browser";
 
 @Component({
   selector: 'app-browse',
@@ -28,7 +29,7 @@ export class BrowseComponent implements OnInit {
   isMediaFile: boolean = false;
   fileUrl: string = '';
 
-  constructor(private backend: BackendService, private route: ActivatedRoute, public router: Router, private location: Location) { }
+  constructor(private backend: BackendService, private route: ActivatedRoute, public router: Router, private title: Title) { }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event) {
@@ -93,6 +94,7 @@ export class BrowseComponent implements OnInit {
       this.parentUrl = '';
     } else {
       this.name = value.name;
+      this.title.setTitle(value.name);
       this.hasParent = true;
 
       let url = this.route.snapshot.url;
