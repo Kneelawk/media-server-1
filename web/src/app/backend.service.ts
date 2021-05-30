@@ -29,6 +29,10 @@ export class BackendService {
     })
   }
 
+  static url(url: string): string {
+    return BackendService.baseUrl + url;
+  }
+
   getIndexFile(path: string): Observable<ResponseResult<EntryInfo>> {
     return this.client.get<ResponseResult<EntryInfo>>(`${ BackendService.indexFilesUrl }${ path }`)
   }

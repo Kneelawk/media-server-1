@@ -6,7 +6,7 @@ use crate::{
         Result, ResultExt,
     },
     util::{
-        path::parse_path,
+        path::{file_extension, parse_path},
         web::{json_ok, json_ok_status},
     },
 };
@@ -157,6 +157,10 @@ impl Service for FilesIndexService {
             } else {
                 let json = JsonEntryInfo {
                     detail: JsonEntryDetail::File {
+                        mime_type: actix_files::file_extension_to_mime(
+                            file_extension(&relative_path_str).unwrap_or(""),
+                        )
+                        .to_string(),
                         url: format!("{}{}", CDN_FILES_URL, url_encoded_relative_path),
                     },
                     name: relative_path
@@ -327,7 +331,7 @@ struct JsonEntryInfo {
 enum JsonEntryDetail {
     Directory { children: Vec<JsonDirectoryChild> },
     Error { error: JsonIndexError },
-    File { url: String },
+    File { mime_type: String, url: String },
 }
 
 #[derive(Debug, Serialize)]

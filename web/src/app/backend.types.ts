@@ -40,6 +40,7 @@ export interface EntryDetailError {
 
 /// Represents a file node that is a file. This gives the cdn url where the file can be obtained.
 export interface EntryDetailFile {
+  mime_type: string;
   url: string;
 }
 
