@@ -1,10 +1,12 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { BackendService } from "../backend.service";
 import { DirectoryChild, EntryInfo } from "../backend.types";
 import { ActivatedRoute, Router } from "@angular/router";
-import { Location } from "@angular/common";
 import { BROWSE_PATH } from "../paths";
 import { Title } from "@angular/platform-browser";
+
+// There is not really a good way to determine a video's fps so we just assume every video has a *constant* fps of 30.
+const fps = 30;
 
 @Component({
   selector: 'app-browse',
@@ -29,6 +31,9 @@ export class BrowseComponent implements OnInit {
   isMediaFile: boolean = false;
   fileUrl: string = '';
 
+  @ViewChild('player')
+  private playerRef: ElementRef | undefined;
+
   constructor(private backend: BackendService, private route: ActivatedRoute, public router: Router, private title: Title) { }
 
   @HostListener('document:click', ['$event'])
@@ -37,6 +42,53 @@ export class BrowseComponent implements OnInit {
     if (target instanceof HTMLAnchorElement) {
       if (target.classList.contains('browse-link')) {
         event.preventDefault();
+      }
+    }
+  }
+
+  @HostListener('document:keypress', ['$event'])
+  onDocumentKeyPress(event: KeyboardEvent) {
+    if (this.playerRef) {
+      const player: HTMLVideoElement = this.playerRef.nativeElement;
+
+      let code = event.key;
+      if (code === 'k' || code === 'K') {
+        if (player.paused || player.ended) {
+          player.play();
+        } else {
+          player.pause();
+        }
+      }
+      if (code === 'j' || code === 'J') {
+        player.currentTime -= 10;
+      }
+      if (code === 'l' || code === 'L') {
+        player.currentTime += 10;
+      }
+      if (code === 'h' || code === 'H') {
+        player.currentTime -= 5;
+      }
+      if (code === ';' || code === ':') {
+        player.currentTime += 5;
+      }
+      if (code === 'm' || code === 'M') {
+        player.muted = !player.muted;
+      }
+      if (code === '-' || code === '_') {
+        player.volume -= 0.05;
+      }
+      if (code === '=' || code === '+') {
+        player.volume += 0.05;
+      }
+      if (code === ',' || code === '<') {
+        let frame = player.currentTime * fps;
+        frame -= 1;
+        player.currentTime = frame / fps + 0.00001;
+      }
+      if (code === '.' || code === '>') {
+        let frame = player.currentTime * fps;
+        frame += 1;
+        player.currentTime = frame / fps + 0.00001;
       }
     }
   }
@@ -98,16 +150,16 @@ export class BrowseComponent implements OnInit {
       this.hasParent = true;
 
       let url = this.route.snapshot.url;
-      console.log(`Current Url: [${url}]`)
+      console.log(`Current Url: [${ url }]`)
       if (url[url.length - 1].path == '') {
         url = url.slice(0, url.length - 2);
       } else {
         url = url.slice(0, url.length - 1);
       }
       if (url.length > 0) {
-        this.parentUrl = `/${BROWSE_PATH}/${url.join('/')}/`;
+        this.parentUrl = `/${ BROWSE_PATH }/${ url.join('/') }/`;
       } else {
-        this.parentUrl = `/${BROWSE_PATH}/`;
+        this.parentUrl = `/${ BROWSE_PATH }/`;
       }
     }
 

@@ -15,6 +15,6 @@
   </div>
   <h2 *ngIf="state == 'error'">{{error}}</h2>
   <div *ngIf="isMediaFile">
-    <video [src]="url(fileUrl)" controls></video>
+    <video #player [src]="url(fileUrl)" controls></video>
   </div>
 </div>
