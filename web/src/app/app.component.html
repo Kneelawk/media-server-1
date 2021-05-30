@@ -1,8 +1,5 @@
 <div class="content">
   <!--  <div th:insert="~{menu-bar :: menubar}"></div>-->
   <app-menu-bar></app-menu-bar>
-  <div>
-    <h1 id="title">{{title$ | async}}</h1>
-    <div [innerHTML]="content$ | async"></div>
-  </div>
+  <router-outlet></router-outlet>
 </div>
