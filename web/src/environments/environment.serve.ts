@@ -7,4 +7,4 @@ export const environment = {
   serve: true
 };
 
-import 'zone.js/dist/zone-error';
+import 'zone.js/plugins/zone-error';
