@@ -1,12 +1,10 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { BackendService } from "../backend.service";
-import { DirectoryChild, EntryInfo } from "../backend.types";
+import { EntryDetail, EntryInfo, ResponseResult } from "../backend.types";
 import { ActivatedRoute, Router } from "@angular/router";
 import { BROWSE_PATH } from "../paths";
 import { Title } from "@angular/platform-browser";
-
-// There is not really a good way to determine a video's fps so we just assume every video has a *constant* fps of 30.
-const fps = 30;
+import { environment } from "../../environments/environment";
 
 @Component({
   selector: 'app-browse',
@@ -17,22 +15,13 @@ export class BrowseComponent implements OnInit {
 
   name: string = 'Loading...'
   path: string = 'Loading...'
-  state: string = 'none';
+  state: 'none' | 'directory' | 'error' | 'file' | 'media-file' = 'none';
   hasParent: boolean = false;
   parentUrl: string = '';
-
-  // directory attributes
-  children: Array<DirectoryChild> = [];
+  detail: EntryDetail | null = null;
 
   // error attributes
-  error: string = '';
-
-  // file attributes
-  isMediaFile: boolean = false;
-  fileUrl: string = '';
-
-  @ViewChild('player')
-  private playerRef: ElementRef | undefined;
+  error: string | null = null;
 
   constructor(private backend: BackendService, private route: ActivatedRoute, public router: Router, private title: Title) { }
 
@@ -46,53 +35,6 @@ export class BrowseComponent implements OnInit {
     }
   }
 
-  @HostListener('document:keypress', ['$event'])
-  onDocumentKeyPress(event: KeyboardEvent) {
-    if (this.playerRef) {
-      const player: HTMLVideoElement = this.playerRef.nativeElement;
-
-      let code = event.key;
-      if (code === 'k' || code === 'K') {
-        if (player.paused || player.ended) {
-          player.play();
-        } else {
-          player.pause();
-        }
-      }
-      if (code === 'j' || code === 'J') {
-        player.currentTime -= 10;
-      }
-      if (code === 'l' || code === 'L') {
-        player.currentTime += 10;
-      }
-      if (code === 'h' || code === 'H') {
-        player.currentTime -= 5;
-      }
-      if (code === ';' || code === ':') {
-        player.currentTime += 5;
-      }
-      if (code === 'm' || code === 'M') {
-        player.muted = !player.muted;
-      }
-      if (code === '-' || code === '_') {
-        player.volume -= 0.05;
-      }
-      if (code === '=' || code === '+') {
-        player.volume += 0.05;
-      }
-      if (code === ',' || code === '<') {
-        let frame = player.currentTime * fps;
-        frame -= 1;
-        player.currentTime = frame / fps + 0.00001;
-      }
-      if (code === '.' || code === '>') {
-        let frame = player.currentTime * fps;
-        frame += 1;
-        player.currentTime = frame / fps + 0.00001;
-      }
-    }
-  }
-
   ngOnInit(): void {
     this.route.url.subscribe(_ => {
       this.loadPath(this.getPath());
@@ -102,11 +44,6 @@ export class BrowseComponent implements OnInit {
 
   navigateBack() {
     this.router.navigateByUrl(this.parentUrl).then(_ => {});
-  }
-
-  navigateTo(path: string) {
-    const fullPath = `/tree${ path }`;
-    this.router.navigateByUrl(fullPath).then(_ => {});
   }
 
   url(url: string): string {
@@ -124,7 +61,9 @@ export class BrowseComponent implements OnInit {
 
     path = path.replace('%2B', '+');
 
-    console.log(`Loading path: ${ path }`)
+    if (!environment.production) {
+      console.log(`Loading path: ${ path }`)
+    }
 
     this.backend.getIndexFile(path).subscribe(result => {
       const value = result.Ok;
@@ -132,9 +71,17 @@ export class BrowseComponent implements OnInit {
         this.handleEntry(value);
       }
     }, error => {
-      let value: EntryInfo | null = error.error.Ok;
-      if (value != null) {
-        this.handleEntry(value);
+      const response: ResponseResult<EntryInfo> | null = error.error;
+      if (response != null && response.Ok != null) {
+        this.handleEntry(response.Ok);
+      } else {
+        this.name = this.getPathName();
+        this.title.setTitle(this.name);
+        this.path = this.getPath();
+        this.hasParent = this.route.snapshot.url.length > 0;
+        this.parentUrl = this.getParentPath();
+        this.error = error.statusText;
+        this.state = 'error';
       }
     });
   }
@@ -142,62 +89,84 @@ export class BrowseComponent implements OnInit {
   private handleEntry(value: EntryInfo) {
     if (value.name == '') {
       this.name = 'Browse';
+      this.title.setTitle('Browse');
       this.hasParent = false;
       this.parentUrl = '';
     } else {
       this.name = value.name;
       this.title.setTitle(value.name);
       this.hasParent = true;
-
-      let url = this.route.snapshot.url;
-      console.log(`Current Url: [${ url }]`)
-      if (url[url.length - 1].path == '') {
-        url = url.slice(0, url.length - 2);
-      } else {
-        url = url.slice(0, url.length - 1);
-      }
-      if (url.length > 0) {
-        this.parentUrl = `/${ BROWSE_PATH }/${ url.join('/') }/`;
-      } else {
-        this.parentUrl = `/${ BROWSE_PATH }/`;
-      }
+      this.parentUrl = this.getParentPath();
     }
 
     this.path = value.path_pretty;
 
-    const dir = value.detail.Directory;
-    if (dir != null) {
-      this.children = dir.children;
-      this.children.sort((a, b) => a.name.localeCompare(b.name));
-      this.state = 'dir';
-    } else {
-      this.children = [];
+    this.detail = value.detail;
+
+    if (value.detail.Directory != null) {
+      this.state = 'directory';
     }
 
     const file = value.detail.File;
     if (file != null) {
-      this.state = 'file';
-      this.isMediaFile = file.mime_type.startsWith('video/');
-      this.fileUrl = file.url;
-    } else {
-      this.isMediaFile = false;
-      this.fileUrl = '';
+      if (file.mime_type.startsWith('video/')) {
+        this.state = 'media-file';
+      } else {
+        this.state = 'file';
+      }
     }
 
     const error = value.detail.Error;
     if (error != null) {
       this.state = 'error';
       this.error = error.error;
+    } else {
+      this.error = null;
     }
   }
 
-  private getPath() {
+  private getPath(): string {
     const snapshot = this.route.snapshot;
 
     if (snapshot.routeConfig?.path != '**') {
       return '/';
     } else {
       return '/' + snapshot.url.join('/')
+    }
+  }
+
+  private getParentPath(): string {
+    let url = this.route.snapshot.url;
+    if (!environment.production) {
+      console.log(`Current Url: [${ url }]`);
+    }
+
+    if (url.length < 1) {
+      return '/';
+    }
+
+    if (url[url.length - 1].path == '') {
+      url = url.slice(0, url.length - 2);
+    } else {
+      url = url.slice(0, url.length - 1);
+    }
+
+    if (url.length > 0) {
+      return `/${ BROWSE_PATH }/${ url.join('/') }/`;
+    } else {
+      return `/${ BROWSE_PATH }/`;
+    }
+  }
+
+  private getPathName(): string {
+    let url = this.route.snapshot.url;
+
+    if (url.length < 1) {
+      return '/';
+    } else if (url[url.length - 1].path == '') {
+      return url[url.length - 2].path;
+    } else {
+      return url[url.length - 1].path;
     }
   }
 }

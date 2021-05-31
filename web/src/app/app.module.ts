@@ -10,13 +10,19 @@ import { BrowseComponent } from './browse/browse.component';
 import { MarkdownModule, MarkedOptions } from "ngx-markdown";
 import { markedOptionsFactory } from "./markdown-util";
 import { AnchorService } from "./anchor.service";
+import { BrowseErrorComponent } from './browse-error/browse-error.component';
+import { BrowseDirectoryComponent } from './browse-directory/browse-directory.component';
+import { BrowseMediaFileComponent } from './browse-media-file/browse-media-file.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MenuBarComponent,
     WelcomeComponent,
-    BrowseComponent
+    BrowseComponent,
+    BrowseErrorComponent,
+    BrowseDirectoryComponent,
+    BrowseMediaFileComponent
   ],
   imports: [
     BrowserModule,
