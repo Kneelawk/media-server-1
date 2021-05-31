@@ -1,10 +1,22 @@
+use crate::error::{ErrorKind, Result};
+use regex::Regex;
+use std::path::PathBuf;
+
+lazy_static! {
+    static ref FILE_EXTENSION_PATTERN: Regex = Regex::new(r#".*\.(?P<ext>[^.]+)$"#).unwrap();
+}
+
+pub fn file_extension(path: &str) -> Option<&str> {
+    FILE_EXTENSION_PATTERN
+        .captures(path)
+        .and_then(|c| c.name("ext"))
+        .map(|m| m.as_str())
+}
+
 /*
  * Copied from actix-files-0.5.0/src/error.rs to make sure responses stay the
  * same for limited files.
  */
-
-use crate::error::{ErrorKind, Result};
-use std::path::PathBuf;
 
 pub fn parse_path(path: &str, hidden_files: bool) -> Result<PathBuf> {
     let mut buf = PathBuf::new();
