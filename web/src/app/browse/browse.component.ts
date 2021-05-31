@@ -168,6 +168,7 @@ export class BrowseComponent implements OnInit {
     const dir = value.detail.Directory;
     if (dir != null) {
       this.children = dir.children;
+      this.children.sort((a, b) => a.name.localeCompare(b.name));
       this.state = 'dir';
     } else {
       this.children = [];
