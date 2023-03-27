@@ -30,6 +30,7 @@ mod frontend {
 async fn run() -> Result<()> {
     let config = Config::load()?;
 
+    #[cfg(feature = "ffmpeg")]
     util::ffmpeg::init_ffmpeg()?;
 
     let server_config = config.clone();

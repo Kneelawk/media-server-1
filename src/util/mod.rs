@@ -1,3 +1,4 @@
+#[cfg(feature = "ffmpeg")]
 pub mod ffmpeg;
 pub mod path;
 pub mod web;

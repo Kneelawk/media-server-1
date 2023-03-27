@@ -1,10 +1,12 @@
 mod fancy_file;
+#[cfg(feature = "ffmpeg")]
 mod ffmpeg;
 
 use crate::logging::fancy_file::FancyFileAppenderDeserializer;
 use log4rs::config::Deserializers;
 use std::{fs::OpenOptions, io::Write, path::Path};
 
+#[cfg(feature = "ffmpeg")]
 pub use ffmpeg::log_callback;
 
 const DEFAULT_CONFIG_FILE: &str = "media-server-1.log4rs.yaml";

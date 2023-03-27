@@ -161,5 +161,8 @@
       }
     }
   },
-  "defaultProject": "media-server-one"
+  "defaultProject": "media-server-one",
+  "cli": {
+    "analytics": "cfaa2e65-776e-495b-98cc-ae28b8c8fd39"
+  }
 }
