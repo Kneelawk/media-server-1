@@ -2,7 +2,7 @@ use crate::{
     config::Config,
     error::{
         Error, ErrorKind,
-        ErrorKind::{FilesIndexUnknownError, InvalidMethodError},
+        ErrorKind::{FilesIndexUnknownError, InvalidMethodError, UriSegmentError},
         Result, ResultExt,
     },
     util::{
@@ -20,7 +20,7 @@ use actix_web::{
 use core::result;
 use futures::future::{ok, Ready};
 use path_slash::PathExt;
-use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
+use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 use std::{
     io,
     path::Path,
@@ -28,6 +28,7 @@ use std::{
 };
 
 const CDN_FILES_URL: &'static str = "/cdn/files";
+const API_PREFIX_LEN: usize = "/api/v1/index/files".len();
 
 lazy_static! {
     static ref PATH_SET: AsciiSet = NON_ALPHANUMERIC
@@ -99,7 +100,13 @@ impl Service for FilesIndexService {
 
         let full_path_str = req.path().to_string();
 
-        let relative_path_str = req.match_info().path().to_string();
+        let relative_path_str = match percent_decode_str(&full_path_str).decode_utf8() {
+            Ok(str) => str[API_PREFIX_LEN..].to_string(),
+            Err(_err) => {
+                return ok(req.error_response(Error::from_kind(UriSegmentError)));
+            }
+        };
+
         let url_encoded_relative_path =
             utf8_percent_encode(&relative_path_str, &PATH_SET).to_string();
 
